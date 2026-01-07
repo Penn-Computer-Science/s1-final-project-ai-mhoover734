@@ -1,3 +1,5 @@
+'''This is a playable and mostly commented copy of my python game that I am fitting into a DL model'''
+
 #imports
 import pygame
 import random
@@ -32,6 +34,7 @@ running = True #default running to true
 
 #main func
 def game():
+    #make most variables global
     global elapsed_time
     global direction
     global new_direction
@@ -42,8 +45,7 @@ def game():
     global snake_length
     global high_score
     global running
-    
-    direction = new_direction
+    direction = new_direction #direction exists to check next frame to stop 180' turns, instantly killing the player
     if new_direction == "North": #offset new player position by new direction vector
         player_pos.y -= height/20
     if new_direction == "South":
@@ -57,7 +59,6 @@ def game():
         fruit_obtained = True #if so, record it and increase length of snake
         snake_length += 1
     break_pixel = 0 #default to none
-    reset = False #default to false
     for key in pos_dict: #iterate position log
         value = pos_dict[key] #for each position, value = lifespan of position
         if value == 0: #if lifespan hits 0, draw over snake (deletes pixel)
@@ -74,7 +75,6 @@ def game():
             pygame.draw.rect(screen, "green", (width/2, height/2, width/20, height/20)) #draw new position
             direction = "North" #reset directions
             new_direction = "North"
-            reset = True #record reset happening, as break only exits the 'for' loop
             while True: #find a new fruit position (exception is center, where snake spawns)
                 pos_fruit_x = random.randint(1,19) * width/20
                 pos_fruit_y = random.randint(1,19) * height/20
@@ -100,29 +100,7 @@ def game():
     screen.blit(pygame.font.SysFont('Arial', 10).render('Scr: '+str(snake_length-3)+'  HScr:'+str(high_score-3), False, 'white'), (0, 0))
     pygame.display.flip() #actually update everything on display
 
-def state_update():
-    direction_right = int(new_direction == "East")
-    direction_left = int(new_direction == "West")
-    direction_up = int(new_direction == "North")
-    direction_down = int(new_direction == "South")
-    loc_straight = ((direction_right-direction_left)*width/20+player_pos.x, (direction_down-direction_up)*height/20+player_pos.y)
-    loc_left = ((direction_down-direction_up)*width/20+player_pos.x, (direction_left-direction_right)*height/20+player_pos.y)
-    loc_right = ((direction_up-direction_down)*width/20+player_pos.x, (direction_right-direction_left)*height/20+player_pos.y)
-    state = [int((loc_straight) in pos_dict or loc_straight[0]/(width/20) not in range(20) or loc_straight[1]/(height/20) not in range(20)),
-        int((loc_right) in pos_dict or loc_right[0]/(width/20) not in range(20) or loc_right[1]/(height/20) not in range(20)),
-        int((loc_left) in pos_dict or loc_left[0]/(width/20) not in range(20) or loc_left[1]/(height/20) not in range(20)),
-        direction_left,
-        direction_right,
-        direction_up,
-        direction_down, #state = collisions(straight, right, left), directions(left, right, up, down), fruit directions (west, east, north, south)
-        int(pos_fruit_x < player_pos.x),
-        int(pos_fruit_x > player_pos.x),
-        int(pos_fruit_y < player_pos.y),
-        int(pos_fruit_y > player_pos.y)]
-    print(state)
-    return state
-
-
+#game running loop:
 while running:
     for event in pygame.event.get(): #check if quit, if so end loop
         if event.type == pygame.QUIT:
@@ -140,14 +118,8 @@ while running:
     elapsed_time += dt #elapsed time counter, as dt just counts how much time in each 1/60 second tick passed in decimals
     if elapsed_time > game_tick: #if tick is reached
         elapsed_time -= game_tick #remove tick # from timer, effectively restarting it
-        
         game()
-        game_state = state_update()
-       
+
+#final prints (after loop)
 print('Score: '+str(snake_length-3)) #when running loop ends (pygame.QUIT occurs, game closed out of)
 print('High Score:'+str(high_score-3)) #record scores in console
-
-# -=-=-=-=-=-=-=-=-=-=- GAME -=-=-=-=-=-=-=-=-=-=-
-
-
-# -=-=-=-=-=-=-=-=-=-=- GAME -=-=-=-=-=-=-=-=-=-=-
