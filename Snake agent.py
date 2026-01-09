@@ -1,8 +1,9 @@
 import torch
+import pygame
 import random
 import numpy as np
 from collections import deque
-from Project import SnakeGameAI, snake_length
+from Project import SnakeGameAI, snake_length#, direction
 from model import Linear_QNet, QTrainer
 #from helper import plot
 
@@ -19,10 +20,11 @@ class Agent:
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
         self.model = Linear_QNet(11, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+        
+        # keep the rest of your existing init code
 
-
-    def get_state():
-        return np.array((SnakeGameAI.state_update()), dtype=int)
+   # def get_state(self):
+    #    return np.array(SnakeGameAI.state_update(), dtype=int)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached
@@ -58,15 +60,15 @@ class Agent:
 
 
 def train():
-    plot_scores = []
+    '''plot_scores = []
     plot_mean_scores = []
-    total_score = 0
+    total_score = 0'''
     record = 0
     agent = Agent()
     game = SnakeGameAI()
     while True:
         # get old state
-        state_old = agent.get_state()
+        state_old = game.state_update()
 
         # get move
         final_move = agent.get_action(state_old)
@@ -79,9 +81,10 @@ def train():
             done = 1
         else:
             done = 0
-            reward = tick[0]
-        state_new = agent.get_state()
+        state_new = game.state_update()
         reward = game.reward_state()
+       
+
 
         # train short memory
         agent.train_short_memory(state_old, final_move, reward, state_new, done)
@@ -91,15 +94,15 @@ def train():
 
         if done:
             # train long memory, plot result
+            if snake_length-3 > record:
+                record = snake_length-3
+                agent.model.save()
             game.reset_game()
             agent.n_games += 1
             agent.train_long_memory()
 
-            if snake_length > record:
-                record = snake_length
-                agent.model.save()
 
-            print('Game', agent.n_games, 'Score', snake_length, 'Record:', record)
+            print('Game', agent.n_games, 'Score', snake_length-3, 'Record:', record)
 
             '''plot_scores.append(snake_length)
             total_score += snake_length

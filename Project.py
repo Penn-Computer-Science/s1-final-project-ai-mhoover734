@@ -16,7 +16,7 @@ pygame.draw.rect(screen, "green", (width/2, height/2, width/20, height/20))
 direction = "North"
 new_direction = "North"
 elapsed_time = 0
-game_tick = .6
+game_tick = .005
 snake_length = 3
 high_score = 0
 pos_dict = {(width/2, height/2):snake_length-1}
@@ -32,13 +32,12 @@ fruit_obtained = False
 directions = ["North", "East", "South", "West"]
 
 class SnakeGameAI:
-    #to calculate reward state:
-    def reward_state():
-        global reset
-        return (int(fruit_obtained)-int(reset))*10
-    
+
+    def __init__(self):
+        self.elapsed_time = 0
+        self.clock = pygame.time.Clock()
     #main func:
-    def game():
+    def game(self):
         global elapsed_time
         global direction
         global new_direction
@@ -73,7 +72,7 @@ class SnakeGameAI:
             elif not(fruit_obtained):
                 pos_dict[key] = value-1
             if key == player_pos or player_pos.x/(width/20) not in range(20) or player_pos.y/(height/20) not in range(20):
-                return reset_game()
+                return True
         pos_dict[(player_pos.x,player_pos.y)] = snake_length-1
         if break_pixel != 0:
             del pos_dict[break_pixel]
@@ -91,10 +90,10 @@ class SnakeGameAI:
         pygame.draw.rect(screen, (50, 50, 50), (0, 0, 70, 12))
         screen.blit(pygame.font.SysFont('Arial', 10).render('Scr: '+str(snake_length-3)+'  HScr:'+str(high_score-3), False, 'white'), (0, 0))
         pygame.display.flip()
-        return reward_state()
+        return False
 
     #to reset the game when needed:
-    def reset_game():
+    def reset_game(self):
         global direction
         global new_direction
         global player_pos
@@ -103,7 +102,7 @@ class SnakeGameAI:
         global pos_dict
         global snake_length
         global reset
-        print('Score: '+str(snake_length-3))
+        #print('Score: '+str(snake_length-3))
         screen.fill("black")
         snake_length = 3
         pos_dict = {(width/2, height/2):snake_length-1}
@@ -118,10 +117,13 @@ class SnakeGameAI:
             if pos_fruit_x != width/2 or pos_fruit_y != height/2:
                 break
         pygame.draw.circle(screen, "red", (pos_fruit_x+(width/40), pos_fruit_y+(height/40)), (width+height)/80, 0)
-        return reward_state()
+
+    #to calculate reward state:
+    def reward_state(self):
+        return (int(fruit_obtained)-int(reset))*10-.005
 
     #to get the current ingame status
-    def state_update():
+    def state_update(self):
         direction_right = int(new_direction == "East")
         direction_left = int(new_direction == "West")
         direction_up = int(new_direction == "North")
@@ -144,42 +146,53 @@ class SnakeGameAI:
         return state     #      \    collisions    /    \ snake direction  /    \ fruit direction  /
 
     #model input being left turn calls this
-    def left_turn():
+    def left_turn(self):
         global new_direction
         new_direction = directions[(directions.index(new_direction)+3)%4]
 
     #model input being right turn calls this
-    def right_turn():
+    def right_turn(self):
         global new_direction
         new_direction = directions[(directions.index(new_direction)+1)%4]
 
     #running loop
-    while running:
+    '''
+    def run_tick(self, action):
+        #game = SnakeGameAI()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                return 'quit'
         dt = clock.tick(60) / 1000
-        elapsed_time += dt
-        keys = pygame.key.get_pressed()
-        action = 0, keys[pygame.K_a], keys[pygame.K_d]
-        if elapsed_time > game_tick:
-            elapsed_time -= game_tick
-            old_state = state_update()
-            #feed into model
-            #model returns inputs
-            '''whatever this means below'''
-                # Linear_QNet (DQN)
-                # model.predict(old_state)
-            # action - 0, 0, 0 - straight, left, right
-            action = 0, 0, 1
+        self.elapsed_time += dt
+        if self.elapsed_time > game_tick:
+            self.elapsed_time -= game_tick
             if bool(action[1]):
-                left_turn()
+                self.left_turn()
             elif bool(action[2]):
-                right_turn()       
-            reward_value = game()
-            new_state = state_update()
+                self.right_turn()
+            reward_value = game.game()
+            return reward_value
+            new_state = ga
             memory = old_state, new_state, reward_value, int(reset), action
-            print(memory)
+            print(memory)'''
             #train the model
-    print('Score: '+str(snake_length-3))
-    print('High Score:'+str(high_score-3))
+    def run_tick(self, action):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return 'quit'
+
+        dt = self.clock.tick(60) / 1000
+        self.elapsed_time += dt
+
+        if self.elapsed_time > game_tick:
+            self.elapsed_time -= game_tick
+
+            if action[1]:
+                self.left_turn()
+            elif action[2]:
+                self.right_turn()
+
+            done = self.game()
+            return done
+
+        return False
