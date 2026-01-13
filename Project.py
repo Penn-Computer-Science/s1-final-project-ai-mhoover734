@@ -16,7 +16,7 @@ pygame.draw.rect(screen, "green", (width/2, height/2, width/20, height/20))
 direction = "North"
 new_direction = "North"
 elapsed_time = 0
-game_tick = .005
+game_tick = .01
 snake_length = 3
 high_score = 0
 pos_dict = {(width/2, height/2):snake_length-1}
@@ -30,6 +30,7 @@ running = True
 reset = False
 fruit_obtained = False
 directions = ["North", "East", "South", "West"]
+time_spent = 0
 
 class SnakeGameAI:
 
@@ -72,6 +73,7 @@ class SnakeGameAI:
             elif not(fruit_obtained):
                 pos_dict[key] = value-1
             if key == player_pos or player_pos.x/(width/20) not in range(20) or player_pos.y/(height/20) not in range(20):
+                reset = True
                 return True
         pos_dict[(player_pos.x,player_pos.y)] = snake_length-1
         if break_pixel != 0:
@@ -102,6 +104,7 @@ class SnakeGameAI:
         global pos_dict
         global snake_length
         global reset
+        global time_spent
         #print('Score: '+str(snake_length-3))
         screen.fill("black")
         snake_length = 3
@@ -111,6 +114,7 @@ class SnakeGameAI:
         direction = "North"
         new_direction = "North"
         reset = True
+        time_spent = 0
         while True:
             pos_fruit_x = random.randint(1,19) * width/20
             pos_fruit_y = random.randint(1,19) * height/20
@@ -120,7 +124,25 @@ class SnakeGameAI:
 
     #to calculate reward state:
     def reward_state(self):
-        return (int(fruit_obtained)-int(reset))*10-.005
+        global time_spent
+        if fruit_obtained:
+            time_spent = 0
+        else:
+            time_spent += 1
+        if pos_fruit_x < player_pos.x and direction == "West":
+            reward = 4
+        elif pos_fruit_x > player_pos.x and direction == "East":
+            reward = 4
+        elif pos_fruit_y < player_pos.y and direction == "North":
+            reward = 4
+        elif pos_fruit_y > player_pos.y and direction == "South":
+            reward = 4
+        else:
+            reward = -3
+        if time_spent > 100:
+            reward -= 4
+        reward += (int(fruit_obtained)*30-int(reset)*2)*10
+        return reward
 
     #to get the current ingame status
     def state_update(self):

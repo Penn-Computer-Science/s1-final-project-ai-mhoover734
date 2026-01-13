@@ -66,49 +66,58 @@ def train():
     record = 0
     agent = Agent()
     game = SnakeGameAI()
+    elapsed_time = 0
+    clock = pygame.time.Clock()
+    dt=0
+    game_tick = .01
     while True:
-        # get old state
-        state_old = game.state_update()
+        dt = clock.tick(60) / 1000
+        elapsed_time += dt
 
-        # get move
-        final_move = agent.get_action(state_old)
+        if elapsed_time > game_tick:
+            elapsed_time -= game_tick
+            # get old state
+            state_old = game.state_update()
 
-        # perform move and get new state
-        tick = game.run_tick(final_move)
-        if tick == 'quit':
-            break
-        elif tick:
-            done = 1
-        else:
-            done = 0
-        state_new = game.state_update()
-        reward = game.reward_state()
-       
+            # get move
+            final_move = agent.get_action(state_old)
 
-
-        # train short memory
-        agent.train_short_memory(state_old, final_move, reward, state_new, done)
-
-        # remember
-        agent.remember(state_old, final_move, reward, state_new, done)
-
-        if done:
-            # train long memory, plot result
-            if snake_length-3 > record:
-                record = snake_length-3
-                agent.model.save()
-            game.reset_game()
-            agent.n_games += 1
-            agent.train_long_memory()
+            # perform move and get new state
+            tick = game.run_tick(final_move)
+            if tick == 'quit':
+                break
+            elif tick:
+                done = 1
+            else:
+                done = 0
+            state_new = game.state_update()
+            reward = game.reward_state()
+        
 
 
-            print('Game', agent.n_games, 'Score', snake_length-3, 'Record:', record)
+            # train short memory
+            agent.train_short_memory(state_old, final_move, reward, state_new, done)
 
-            '''plot_scores.append(snake_length)
-            total_score += snake_length
-            mean_score = total_score / agent.n_games
-            plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores)'''
+            # remember
+            agent.remember(state_old, final_move, reward, state_new, done)
+
+            if done:
+                # train long memory, plot result
+                if snake_length-3 > record:
+                    record = snake_length-3
+                    agent.model.save()
+                game.reset_game()
+                agent.n_games += 1
+                agent.train_long_memory()
+
+
+                print('Game', agent.n_games, 'Score', snake_length-3, 'Record:', record)
+
+                '''plot_scores.append(snake_length)
+                total_score += snake_length
+                mean_score = total_score / agent.n_games
+                plot_mean_scores.append(mean_score)
+                plot(plot_scores, plot_mean_scores)'''
 
 
 if __name__ == '__main__':
